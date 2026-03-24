@@ -97,7 +97,7 @@ export default function SearchClient({
     return `${parseInt(day)} ${MOIS_SHORT[parseInt(m) - 1]}`;
   };
 
-  const canInvite = role === "leader" && mySampanaId;
+  const canInvite = !!mySampanaId;
 
   return (
     <div className="animate-fade-in max-w-4xl">

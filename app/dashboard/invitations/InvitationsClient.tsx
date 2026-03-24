@@ -23,6 +23,7 @@ interface Props {
   invitations: Invitation[];
   mySampanaId: string | null;
   role: UserRole;
+  myChurchId: string | null;
 }
 
 type FilterTab = "received" | "sent" | "all";
@@ -31,6 +32,7 @@ export default function InvitationsClient({
   invitations: initial,
   mySampanaId,
   role,
+  myChurchId,
 }: Props) {
   const [invitations, setInvitations] = useState<Invitation[]>(initial);
   const [filter, setFilter] = useState<FilterTab>(
@@ -57,11 +59,15 @@ export default function InvitationsClient({
         response_note: responseNote || null,
       })
       .eq("id", id)
-      .select()
+      .select(`
+        *,
+        inviter_sampana:sampana!inviter_sampana_id(*, church:churches(*)),
+        invitee_sampana:sampana!invitee_sampana_id(*, church:churches(*))
+      `)
       .single();
     if (!error && data) {
       setInvitations((prev) =>
-        prev.map((inv) => (inv.id === id ? { ...inv, ...data } : inv)),
+        prev.map((inv) => (inv.id === id ? { ...inv, ...data } : (inv as any))),
       );
       setRespondingId(null);
       setResponseNote("");
@@ -70,28 +76,38 @@ export default function InvitationsClient({
 
   const filtered = invitations
     .filter((inv) => {
-      if (filter === "received") return inv.invitee_sampana_id === mySampanaId;
-      if (filter === "sent") return inv.inviter_sampana_id === mySampanaId;
+      const inviter = (inv as any).inviter_sampana;
+      const invitee = (inv as any).invitee_sampana;
+
+      const isReceived = inv.invitee_sampana_id === mySampanaId || 
+        (role === "church_admin" && invitee?.church_id === myChurchId);
+      
+      const isSent = inv.inviter_sampana_id === mySampanaId ||
+        (role === "church_admin" && inviter?.church_id === myChurchId);
+
+      if (filter === "received") return isReceived;
+      if (filter === "sent") return isSent;
       return true;
     })
     .filter((inv) => statusFilter === "all" || inv.status === statusFilter);
 
-  const pendingReceived = invitations.filter(
-    (i) => i.invitee_sampana_id === mySampanaId && i.status === "pending",
-  ).length;
+  const pendingReceivedCount = invitations.filter((inv) => {
+    const invitee = (inv as any).invitee_sampana;
+    const isReceived = inv.invitee_sampana_id === mySampanaId || 
+      (role === "church_admin" && invitee?.church_id === myChurchId) ||
+      role === "super_admin";
+    return isReceived && inv.status === "pending";
+  }).length;
 
-  const tabs: [FilterTab, string, string][] =
-    role === "leader"
-      ? [
-          [
-            "received",
-            "📥 Tonga",
-            `${pendingReceived > 0 ? `(${pendingReceived})` : ""}`,
-          ],
-          ["sent", "📤 Nalefa", ""],
-          ["all", "📋 Rehetra", ""],
-        ]
-      : [["all", "📋 Rehetra", ""]];
+  const tabs: [FilterTab, string, string][] = [
+    [
+      "received",
+      "📥 Tonga",
+      `${pendingReceivedCount > 0 ? `(${pendingReceivedCount})` : ""}`,
+    ],
+    ["sent", "📤 Nalefa", ""],
+    ["all", "📋 Rehetra", ""],
+  ];
 
   return (
     <div className="animate-fade-in max-w-3xl">
@@ -159,12 +175,22 @@ export default function InvitationsClient({
       ) : (
         <div className="space-y-3">
           {filtered.map((inv) => {
-            const isReceived = inv.invitee_sampana_id === mySampanaId;
-            const isMyInvite = inv.inviter_sampana_id === mySampanaId;
-            const canRespond =
-              isReceived && inv.status === "pending" && role === "leader";
             const inviter = (inv as any).inviter_sampana;
             const invitee = (inv as any).invitee_sampana;
+
+            const isReceived = inv.invitee_sampana_id === mySampanaId || 
+              (role === "church_admin" && invitee?.church_id === myChurchId) ||
+              role === "super_admin";
+            
+            const isMyInvite = inv.inviter_sampana_id === mySampanaId ||
+              (role === "church_admin" && inviter?.church_id === myChurchId);
+
+            const canRespond =
+              inv.status === "pending" && (
+                role === "super_admin" ||
+                (role === "church_admin" && invitee?.church_id === myChurchId) ||
+                (role === "leader" && inv.invitee_sampana_id === mySampanaId)
+              );
 
             return (
               <div

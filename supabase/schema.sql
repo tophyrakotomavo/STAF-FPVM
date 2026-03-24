@@ -175,16 +175,44 @@ CREATE POLICY "Leader can manage own sampana events" ON programme_events FOR ALL
   );
 
 -- Invitations RLS
-CREATE POLICY "View own invitations" ON invitations FOR SELECT
+CREATE POLICY "View invitations" ON invitations FOR SELECT
   USING (
     get_my_role() = 'super_admin' OR
-    inviter_sampana_id = get_my_sampana_id() OR
-    invitee_sampana_id = get_my_sampana_id()
+    EXISTS (
+      SELECT 1 FROM sampana s 
+      WHERE (s.id = inviter_sampana_id OR s.id = invitee_sampana_id)
+      AND (
+        s.leader_id = auth.uid() OR 
+        (get_my_role() = 'church_admin' AND s.church_id = get_my_church_id())
+      )
+    )
   );
-CREATE POLICY "Leader can create invitations from own sampana" ON invitations FOR INSERT
-  WITH CHECK (inviter_sampana_id = get_my_sampana_id());
-CREATE POLICY "Leader can respond to invitations to own sampana" ON invitations FOR UPDATE
-  USING (invitee_sampana_id = get_my_sampana_id() OR get_my_role() = 'super_admin');
+
+CREATE POLICY "Create invitations" ON invitations FOR INSERT
+  WITH CHECK (
+    get_my_role() = 'super_admin' OR
+    EXISTS (
+      SELECT 1 FROM sampana s
+      WHERE s.id = inviter_sampana_id
+      AND (
+        s.leader_id = auth.uid() OR
+        (get_my_role() = 'church_admin' AND s.church_id = get_my_church_id())
+      )
+    )
+  );
+
+CREATE POLICY "Respond to invitations" ON invitations FOR UPDATE
+  USING (
+    get_my_role() = 'super_admin' OR
+    EXISTS (
+      SELECT 1 FROM sampana s
+      WHERE s.id = invitee_sampana_id
+      AND (
+        s.leader_id = auth.uid() OR
+        (get_my_role() = 'church_admin' AND s.church_id = get_my_church_id())
+      )
+    )
+  );
 
 -- ─── SEED DATA ─────────────────────────────────────────────
 
