@@ -1,56 +1,36 @@
+"use client";
+
 import Image from "next/image";
 import "./affichage/affichage.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type Sampana = {
-  id: number;
-  sampana: string;
-  sampanaNom: string;
-  image: string;
+  id: string;
+  name: string;
+  description: string;
+  image_url: string;
 };
 
 type SampanaView = {
-  id: number;
-  nom: string;
-  fiangonana: string;
+  id: string;
+  name: string;
+  church_name: string;
   description: string;
 };
-
-const sampana_view: SampanaView[] = [
-  {
-    id: 1,
-    nom: "MiM Fiv42",
-    fiangonana: `FPVM Loharanom-pitahiana Ambohipo Tanana`,
-    description: `Ny Sampana mpamakilay dia isan'ny fikambanana SCOUT mijoro eto anivon'ny FPVM`,
-  },
-];
-
-const sampana: Sampana[] = [
-  {
-    id: 1,
-    sampana: "MIM",
-    sampanaNom: "Mpamakilain'i Madagasikara",
-    image: "/images.jpg",
-  },
-  {
-    id: 2,
-    sampana: "AFAFI",
-    sampanaNom: "AFAFI",
-    image: "/images (1).png",
-  },
-];
 
 function Afficher({
   isOpen,
   onClose,
   sampana,
+  sampanaView,
 }: {
   isOpen: boolean;
   onClose: () => void;
   sampana: Sampana | null;
+  sampanaView: SampanaView[];
 }) {
   if (!sampana) return null;
-  const currentView = sampana_view.find((v) => v.id === sampana.id);
   return (
     <div className="affichage" style={{ display: isOpen ? `block` : `none` }}>
       <button className="button" onClick={onClose}>
@@ -59,14 +39,14 @@ function Afficher({
       <div className="entete">
         <p>Sampana</p>
         <p>
-          <em>({sampana.sampana})</em>
+          <em>({sampana.name})</em>
         </p>
-        <h2 className="h2">{sampana.sampanaNom}</h2>
+        <h2 className="h2">{sampana.name}</h2>
       </div>
       <div className="corpsDuDocument">
-        <p>{currentView?.description}</p>
+        <p>{sampana.description}</p>
         <p style={{ textDecoration: `underline` }}>
-          Ireto avy ny fiangonana misy ny sampana {sampana.sampana}:
+          Ireto avy ny fiangonana misy ny sampana {sampana.name}:
         </p>
         <div className="All">
           <div className="sousTitre">
@@ -74,10 +54,10 @@ function Afficher({
             <p>Fiangonana misy azy</p>
           </div>
           <div className="contenu">
-            {sampana_view.map((item) => (
+            {sampanaView.map((item) => (
               <div className="filsContenu" key={item.id}>
-                <span>{`${item.nom}`}</span>
-                <span>{`${item.fiangonana}`}</span>
+                <span>{`${item.name}`}</span>
+                <span>{`${item.church_name}`}</span>
               </div>
             ))}
           </div>
@@ -90,6 +70,34 @@ function Afficher({
 export default function CarousselSampana() {
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<Sampana | null>(null);
+  const [sampana, setSampana] = useState<Sampana[]>([]);
+  const [sampanaView, setSampanaView] = useState<SampanaView[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient();
+
+      const { data: sampanaData } = await supabase
+        .from("sampana")
+        .select("id, name, description, image_url");
+
+      if (sampanaData) setSampana(sampanaData);
+      if (sampanaData) {
+        const views = sampanaData.map(
+          (s: { id: string; name: string; description: string }) => ({
+            id: s.id,
+            name: s.name,
+            church_name: "FPVM Loharanom-pitahiana",
+            description: s.description || "",
+          }),
+        );
+        setSampanaView(views);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   return (
     <section>
       <legend className="legend">sampana rehetra</legend>
@@ -110,8 +118,8 @@ export default function CarousselSampana() {
                 <Image
                   width={200}
                   height={200}
-                  alt={item.sampana}
-                  src={item.image}
+                  alt={item.name}
+                  src={item.image_url || "/images.jpg"}
                 />
               </div>
             </span>
@@ -128,6 +136,7 @@ export default function CarousselSampana() {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         sampana={selected}
+        sampanaView={sampanaView}
       />
     </section>
   );

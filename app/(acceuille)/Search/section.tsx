@@ -1,6 +1,8 @@
-import { useState } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
 import "./section.css";
-import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 type Fanasana = {
   nomSampana: string;
@@ -31,16 +33,38 @@ function Rendre({ fanasana }: { fanasana: Fanasana }) {
   );
 }
 
+type Sampana = {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  church_id: string;
+};
+
 export default function Search() {
   const [className, setClassName] = useState<string>("");
   const [fanasana, setFanasana] = useState<Fanasana>({
-    nomSampana: "MiM",
-    nomLava: `Mpamakilain'i Madagasikara`,
-    fpvm: `Loharanom-pitahiana Ambohipo Tanana`,
-    ml: `2`,
-    synoda: `Analamanga Atsimo`,
+    nomSampana: "",
+    nomLava: "",
+    fpvm: "",
+    ml: "",
+    synoda: "",
   });
   const [search, setSearch] = useState("");
+  const [sampanaList, setSampanaList] = useState<Sampana[]>([]);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function fetchSampana() {
+      const { data } = await supabase
+        .from("sampana")
+        .select("id, name, description, color, church_id");
+      if (data) {
+        setSampanaList(data);
+      }
+    }
+    fetchSampana();
+  }, []);
 
   useEffect(() => {
     if (fanasana.nomSampana === "") {
@@ -75,15 +99,42 @@ export default function Search() {
     console.log(e);
   }
 
+  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    setSearch(value);
+    if (value.trim()) {
+      const filtered = sampanaList.find(
+        (s) => s.name.toLowerCase() === value.toLowerCase()
+      );
+      if (filtered) {
+        setFanasana({
+          nomSampana: filtered.name,
+          nomLava: filtered.description || "",
+          fpvm: filtered.church_id || "",
+          ml: filtered.id || "",
+          synoda: filtered.color || "",
+        });
+      }
+    } else {
+      setFanasana({
+        nomSampana: "",
+        nomLava: "",
+        fpvm: "",
+        ml: "",
+        synoda: "",
+      });
+    }
+  }
+
   return (
     <section>
-      <div className="form" onClick={() => handleSubmit(search)}>
+      <div className="form">
         <input
           type="text"
           placeholder="hitady sampana"
           className="search"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
         />
         <button rel="noopener" className="btnsearch">
           search
@@ -93,30 +144,44 @@ export default function Search() {
       <fieldset id="sampana">
         <legend>result {search}</legend>
         <div className="find">
-          <div className="element">
-            <button
-              className="result"
-              onClick={ouverture}
-              disabled={fanasana.nomSampana === ``}
-            >
-              {fanasana.nomSampana}
-            </button>
-            <span
-              className="sampana"
-              onClick={() => {
-                if (fanasana.nomSampana !== ``) {
-                  ouverture();
-                }
-              }}
-            >{`${fanasana.nomSampana} ${fanasana.fpvm} `}</span>
-            <button
-              className="result contact"
-              onClick={ouverture}
-              disabled={fanasana.nomSampana === ``}
-            >
-              contact
-            </button>
-          </div>
+          {sampanaList
+            .filter((s) => search.trim() !== "" && s.name.toLowerCase().includes(search.toLowerCase()))
+            .slice(0, 5)
+            .map((s) => (
+              <div key={s.id} className="element">
+                <button
+                  className="result"
+                  onClick={() => {
+                    setFanasana({
+                      nomSampana: s.name,
+                      nomLava: s.description || "",
+                      fpvm: s.church_id || "",
+                      ml: s.id || "",
+                      synoda: s.color || "",
+                    });
+                    setSearch(s.name);
+                  }}
+                  disabled={!s.name}
+                >
+                  {s.name}
+                </button>
+                <span
+                  className="sampana"
+                  onClick={() => {
+                    if (s.name) {
+                      setClassName("flex");
+                    }
+                  }}
+                >{`${s.name} ${s.church_id} `}</span>
+                <button
+                  className="result contact"
+                  onClick={() => setClassName("flex")}
+                  disabled={!s.name}
+                >
+                  contact
+                </button>
+              </div>
+            ))}
         </div>
       </fieldset>
 

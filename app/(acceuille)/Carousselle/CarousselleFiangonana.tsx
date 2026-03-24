@@ -1,49 +1,31 @@
-import { useState } from "react";
+"use client";
 
-type SampanaList = {
-  id: number;
-  nom: string;
-};
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
-const sampanalist: SampanaList[] = [
-  {
-    id: 1,
-    nom: "MiM",
-  },
-  {
-    id: 2,
-    nom: "CLAM",
-  },
-];
 type Fiangonana = {
-  id: number;
+  id: string;
   name: string;
   description: string;
 };
-const fiangonana: Fiangonana[] = [
-  {
-    id: 1,
-    name: `FPVM Ambohipo`,
-    description: `Ny FPVM Ambohipo Tanana dia manana sampana 2`,
-  },
-  {
-    id: 2,
-    name: `FPVM Ampitatafika`,
-    description: `Ny FPVM Ampitatafika dia manana sampana 10`,
-  },
-];
+
+type SampanaList = {
+  id: string;
+  nom: string;
+};
 
 function Afficher({
   isOpen,
   onClose,
   fiangonanaList,
+  sampanaList,
 }: {
   isOpen: boolean;
   onClose: () => void;
   fiangonanaList: Fiangonana | null;
+  sampanaList: SampanaList[];
 }) {
   if (!fiangonanaList) return null;
-  const currentView = fiangonana.find((v) => v.id === fiangonanaList.id);
   return (
     <div className="affichage" style={{ display: isOpen ? `block` : `none` }}>
       <button className="button" onClick={onClose}>
@@ -52,10 +34,10 @@ function Afficher({
       <div className="entete">
         <p>FPVM</p>
         <p>Fiangonana Protestanta Vaovao eto Madagasikara</p>
-        <h2 className="h2">FPVM AMBOHITSIFANTATRA</h2>
+        <h2 className="h2">{fiangonanaList.name.toUpperCase()}</h2>
       </div>
       <div className="corpsDuDocument">
-        <p>{currentView?.description}</p>
+        <p>{fiangonanaList.description}</p>
         <p style={{ textDecoration: `underline` }}>
           Ireto avy ny sampana misy eto amin'ny FPVM ...:
         </p>
@@ -65,9 +47,9 @@ function Afficher({
             <p>Fiangonana FPVM...</p>
           </div>
           <div className="contenu">
-            {sampanalist.map((item) => (
+            {sampanaList.map((item) => (
               <div className="filsContenu" key={item.id}>
-                <span>{`#00${item.id}`}</span>
+                <span>{`#00${item.id.slice(0, 1)}`}</span>
                 <span>{`${item.nom}`}</span>
               </div>
             ))}
@@ -81,6 +63,36 @@ function Afficher({
 export default function CarousselFiangonana() {
   const [isOpen, setIsOpen] = useState(false);
   const [selected, setSelected] = useState<Fiangonana | null>(null);
+  const [fiangonana, setFiangonana] = useState<Fiangonana[]>([]);
+  const [sampanaList, setSampanaList] = useState<SampanaList[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient();
+
+      const { data: churchesData } = await supabase
+        .from("churches")
+        .select("*")
+        .like("name", "FPVM%");
+
+      console.log(churchesData);
+
+      const { data: sampanaData } = await supabase
+        .from("sampana")
+        .select("id, name");
+
+      if (churchesData) setFiangonana(churchesData);
+      if (sampanaData)
+        setSampanaList(
+          sampanaData.map((s: { id: string; name: string }) => ({
+            id: s.id,
+            nom: s.name,
+          }))
+        );
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <section className="fiangonana" id="fpvm">
@@ -115,6 +127,7 @@ export default function CarousselFiangonana() {
         isOpen={isOpen}
         onClose={() => setIsOpen(false)}
         fiangonanaList={selected}
+        sampanaList={sampanaList}
       />
     </section>
   );

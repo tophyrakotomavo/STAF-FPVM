@@ -1,9 +1,17 @@
--- ============================================================
--- MiM SAMPANA MANAGER — SUPABASE SCHEMA
--- ============================================================
+-- Leadership positions (for blog page)
+CREATE TABLE leadership (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  position TEXT NOT NULL,
+  name TEXT NOT NULL,
+  organization TEXT NOT NULL CHECK (organization IN ('FPVM', 'STAF')),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Add description to churches
+ALTER TABLE churches ADD COLUMN IF NOT EXISTS description TEXT;
+
+-- Add image_url to sampana
+ALTER TABLE sampana ADD COLUMN IF NOT EXISTS image_url TEXT;
 
 -- ─── TABLES ────────────────────────────────────────────────
 
@@ -133,6 +141,27 @@ CREATE POLICY "Leader can respond to invitations to own sampana" ON invitations 
 
 -- ─── SEED DATA ─────────────────────────────────────────────
 
-INSERT INTO churches (id, name, city) VALUES
-  ('aaaaaaaa-0000-0000-0000-000000000001', 'FJKM Antananarivo Centre', 'Antananarivo'),
-  ('aaaaaaaa-0000-0000-0000-000000000002', 'ECAR Fianarantsoa', 'Fianarantsoa');
+INSERT INTO churches (id, name, city, description) VALUES
+  ('aaaaaaaa-0000-0000-0000-000000000001', 'FJKM Antananarivo Centre', 'Antananarivo', 'Ny Fiangonana Protestanta Vaovao eto Madagasikara dia manana sampana 2'),
+  ('aaaaaaaa-0000-0000-0000-000000000002', 'ECAR Fianarantsoa', 'Fianarantsoa', 'Ny ECAR Fianarantsoa dia manana sampana 10'),
+  ('aaaaaaaa-0000-0000-0000-000000000003', 'FPVM Ambohipo', 'Antananarivo', 'Ny FPVM Ambohipo Tanana dia manana sampana 2'),
+  ('aaaaaaaa-0000-0000-0000-000000000004', 'FPVM Ampitatafika', 'Antananarivo', 'Ny FPVM Ampitatafika dia manana sampana 10');
+
+-- Seed leadership data
+INSERT INTO leadership (position, name, organization) VALUES
+  ('Filohan\'ny FPVM', 'Pasteur RANDRIANATOANDRO Jean Joseph', 'FPVM'),
+  ('Filohan\'ny STAF', 'Pasteur Juliano', 'STAF'),
+  ('Filoha lefitra FPVM', 'Pasteur Romain', 'FPVM'),
+  ('Filoha lefitra STAF', 'Pasteur Hanitra', 'STAF');
+
+-- Seed sampana data (linked to churches)
+INSERT INTO sampana (name, church_id, color, description, image_url) VALUES
+  ('MiM', 'aaaaaaaa-0000-0000-0000-000000000003', '#7C3AED', 'Ny Sampana mpamakilay dia isan'\''ny fikambanana SCOUT mijoro eto anivon'\''ny FPVM', '/images.jpg'),
+  ('AFAFI', 'aaaaaaaa-0000-0000-0000-000000000004', '#3B82F6', 'AFAFI dia sampana an'\''ny vehivavy mpitory', '/images (1).png'),
+  ('CLAM', 'aaaaaaaa-0000-0000-0000-000000000003', '#10B981', 'CLAM dia sampana ara-panahy', '/images.jpg'),
+  ('FFM', 'aaaaaaaa-0000-0000-0000-000000000004', '#F59E0B', 'FFM dia sampana ara-panahy', '/images.jpg');
+
+-- Add RLS policies for leadership
+ALTER TABLE leadership ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view leadership" ON leadership FOR SELECT USING (true);
