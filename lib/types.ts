@@ -11,6 +11,13 @@ export interface Church {
   created_at: string
 }
 
+export interface BranchType {
+  id: string
+  name: string
+  description: string | null
+  created_at: string
+}
+
 export interface Profile {
   id: string
   full_name: string
@@ -26,11 +33,13 @@ export interface Sampana {
   name: string
   church_id: string
   leader_id: string | null
+  branch_type_id: string | null
   color: string
   description: string | null
   created_at: string
   church?: Church
   leader?: Profile
+  branch_type?: BranchType
   _event_count?: number
 }
 

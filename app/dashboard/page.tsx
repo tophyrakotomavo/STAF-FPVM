@@ -202,6 +202,11 @@ export default async function DashboardPage() {
                 label="Hitantana sampana"
               />
               <QuickLink
+                href="/dashboard/branch-types"
+                icon="🏷️"
+                label="Karazana sampana"
+              />
+              <QuickLink
                 href="/dashboard/users"
                 icon="👤"
                 label="Hitantana mpampiasa"
@@ -221,6 +226,11 @@ export default async function DashboardPage() {
                 label="Fiangonana"
               />
               <QuickLink href="/dashboard/sampana" icon="👥" label="Sampana" />
+              <QuickLink
+                href="/dashboard/branch-types"
+                icon="🏷️"
+                label="Karazana"
+              />
               <QuickLink href="/dashboard/users" icon="👤" label="Mpampiasa" />
             </>
           )}

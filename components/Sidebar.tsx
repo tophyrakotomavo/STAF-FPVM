@@ -29,6 +29,11 @@ export default function Sidebar({ profile }: SidebarProps) {
       roles: ["super_admin"],
     },
     {
+      href: "/dashboard/branch-types",
+      label: "🏷️ Branch Types",
+      roles: ["super_admin", "church_admin"],
+    },
+    {
       href: "/dashboard/sampana",
       label: "👥 Sampana",
       roles: ["super_admin", "church_admin"],
