@@ -66,7 +66,7 @@ export default function Sidebar({ profile }: SidebarProps) {
     >
       {/* Logo */}
       <div className="p-6 border-b border-white/10">
-        <div className="flex items-center gap-3">
+        <Link href="/" className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-xl border border-white/20 overflow-hidden">
             <Image src="/staf-logo.jpg" alt="Logo" width={50} height={50} />
           </div>
@@ -78,7 +78,7 @@ export default function Sidebar({ profile }: SidebarProps) {
               SAMPANA MANAGER
             </div>
           </div>
-        </div>
+        </Link>
         {profile?.church && (
           <div className="mt-3 px-3 py-2 rounded-lg bg-white/8 text-purple-200 text-xs font-medium border border-white/10">
             🏛️ {profile.church.name}

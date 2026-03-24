@@ -11,7 +11,10 @@ type Fiangonana = {
 
 type SampanaList = {
   id: string;
-  nom: string;
+  name: string;
+  church_id: string;
+  leader_id: string;
+  description: string;
 };
 
 function Afficher({
@@ -39,20 +42,22 @@ function Afficher({
       <div className="corpsDuDocument">
         <p>{fiangonanaList.description}</p>
         <p style={{ textDecoration: `underline` }}>
-          Ireto avy ny sampana misy eto amin'ny FPVM ...:
+          Ireto avy ny sampana misy eto amin'ny {fiangonanaList.name}:
         </p>
         <div className="All">
           <div className="sousTitre">
             <p>Id</p>
-            <p>Fiangonana FPVM...</p>
+            <p>Fiangonana {fiangonanaList.name}</p>
           </div>
           <div className="contenu">
-            {sampanaList.map((item) => (
-              <div className="filsContenu" key={item.id}>
-                <span>{`#00${item.id.slice(0, 1)}`}</span>
-                <span>{`${item.nom}`}</span>
-              </div>
-            ))}
+            {sampanaList
+              .filter((item) => item.church_id === fiangonanaList.id)
+              .map((item) => (
+                <div className="filsContenu" key={item.id}>
+                  <span>{`#00${item.id.slice(0, 1)}`}</span>
+                  <span>{`${item.name}`}</span>
+                </div>
+              ))}
           </div>
         </div>
       </div>
@@ -77,18 +82,10 @@ export default function CarousselFiangonana() {
 
       console.log(churchesData);
 
-      const { data: sampanaData } = await supabase
-        .from("sampana")
-        .select("id, name");
-
       if (churchesData) setFiangonana(churchesData);
-      if (sampanaData)
-        setSampanaList(
-          sampanaData.map((s: { id: string; name: string }) => ({
-            id: s.id,
-            nom: s.name,
-          }))
-        );
+      const { data: sampanaData } = await supabase.from("sampana").select("*");
+      if (sampanaData) setSampanaList(sampanaData);
+      console.log(sampanaData);
     };
 
     fetchData();
@@ -110,7 +107,10 @@ export default function CarousselFiangonana() {
             <span className="sampanaLogo design">
               <button
                 className="forme btnfiangonana formehover"
-                onClick={() => (setSelected(item), setIsOpen(true))}
+                onClick={() => {
+                  setSelected(item);
+                  setIsOpen(true);
+                }}
               >
                 {item.name}
               </button>
